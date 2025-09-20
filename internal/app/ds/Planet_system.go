@@ -10,8 +10,10 @@ type Planet_system struct {
 	Status         string    `json:"status" gorm:"type:varchar(50);not null"`
 	UserID         uint      `json:"user_id" gorm:"foreignKey:UserID;not null"`
 
-	ModerID         uint   `json:"moder_id"`
-	StarType        string `json:"star_type" gorm:"type:varchar(255)"`
-	StarName        string `json:"star_name" gorm:"type:varchar(255)"`
-	StarTemperature uint   `json:"star_temperature"`
+	ModerID         uint      `json:"moder_id"`
+	DateFormed      time.Time `json:"date_formed"`
+	DateEnded       time.Time `json:"date_ended"`
+	StarType        string    `json:"star_type" gorm:"type:varchar(255)"`
+	StarName        string    `json:"star_name" gorm:"type:varchar(255)"`
+	StarTemperature uint      `json:"star_temperature"`
 }
