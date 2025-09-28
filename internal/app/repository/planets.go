@@ -46,3 +46,41 @@ func (r *Repository) GetCountBySystemID(system_id uint) (int64, error) {
     
     return count, err
 }
+
+func (r *Repository) CreatePlanet(planet ds.Planets) (int, error) {
+	if err := r.db.Create(&planet).Error; err != nil {
+		return -1, err;
+	}
+	
+	return int(planet.PlanetID), nil
+}
+
+func (r *Repository) UpdatePlanet(id uint, input interface{}) (ds.Planets, error) {
+	var planet ds.Planets
+
+	if err := r.db.First(&planet, id).Error; err != nil {
+		return ds.Planets{}, err
+	}
+
+	if err := r.db.Model(&planet).Updates(input).Error; err != nil {
+        return ds.Planets{}, err
+    }
+
+	return planet, nil
+}
+
+func (r *Repository) DeletePlanet(planet_id uint) error {
+	return r.db.Model(&ds.Planets{}).
+		Where("planet_id = ?", planet_id).
+		Update("is_delete", true).Error
+}
+
+func (r *Repository) UpdatePlanetImage(planet_id string, new_image string) error {
+	planet := ds.Planets{}
+	if result := r.db.First(&planet, planet_id); result.Error != nil {
+		return result.Error
+	}
+	planet.PlanetImage = new_image
+	result := r.db.Save(planet)
+	return result.Error
+}

@@ -9,38 +9,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (h *Handler) AddPlanetToSystem(ctx *gin.Context) {
-	planet_id, err1 := strconv.Atoi(ctx.Param("planet_id"))
-	system_id, err2 := h.Repository.GetDraftPlanetSystemID()
-	 if err1 != nil {
-        logrus.Error(err1)
-        ctx.Redirect(http.StatusFound, "/")
-        return
-    }
-	if err2 != nil {
-        logrus.Error(err2)
-        ctx.Redirect(http.StatusFound, "/")
-        return
-    }
-	
-	if system_id == 0 {
-		system_id, err2= h.Repository.CreateNewDraftPlanetSystem(uint(1))
-		if err2 != nil {
-			logrus.Error(err2)
-		}
-	}
-	
-	h.Repository.AddPlanetToSystem(uint(planet_id), uint(system_id))
-	ctx.Redirect(http.StatusFound, "/")
-}
-
 func (h *Handler) DeletePlanetSystem(ctx *gin.Context) {
 	system_id, err := h.Repository.GetDraftPlanetSystemID()
 	if system_id == 0 && err == nil{
 		logrus.Infof("Система для удаления не найдена")
 	}
 	h.Repository.DeletePlanetSystem(uint(system_id))
-    ctx.Redirect(http.StatusFound, "/")
+    ctx.Redirect(http.StatusNotFound, "/")
 }
 
 func (h *Handler) GetPlanetSystemByID(ctx *gin.Context) {
@@ -56,7 +31,7 @@ func (h *Handler) GetPlanetSystemByID(ctx *gin.Context) {
 		logrus.Error(err)
 	}
 	
-	ctx.HTML(http.StatusOK, "planet.html", gin.H{
+	ctx.JSON(http.StatusOK, gin.H{
 		"planet_system": planet_system,
 	})
 }

@@ -33,7 +33,7 @@ func (h *Handler) GetTempRequestData(ctx *gin.Context) {
         logrus.Error("Error getting cart count:", err)
     }
 
-	ctx.HTML(http.StatusOK, "temps_request.html", gin.H{
+	ctx.JSON(http.StatusOK, gin.H{
 		"temp_datas": temp_datas,
 		"cart_count": cart_count,
 	})
