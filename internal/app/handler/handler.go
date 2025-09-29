@@ -11,33 +11,49 @@ import (
 
 type Handler struct {
 	Repository *repository.Repository
-	Minio *minio.Client
+	Minio      *minio.Client
 }
 
 func NewHandler(r *repository.Repository, m *minio.Client) *Handler {
 	return &Handler{
 		Repository: r,
-		Minio: m,
+		Minio:      m,
 	}
 }
 
 func (h *Handler) RegisterPlanetHandler(router *gin.Engine) {
-	router.GET("/", h.GetPlanets)              //список с фильтрацией
-	router.GET("/planet/:id", h.GetPlanetById) //одна запись
-	router.POST("/planet/", h.CreatePlanet)
-	router.PUT("/planet/:id", h.UpdatePlanet)
-	router.DELETE("planet/:id", h.DeletePlanet)
-	router.POST("/add/:planet_id", h.AddPlanetToSystem)
-	router.POST("/image/add/:planet_id", h.AddImage)
+	router.GET("api/planet", h.GetPlanets)
+	router.GET("api/planet/:id", h.GetPlanetById)
+	router.POST("api/planet/", h.CreatePlanet)
+	router.PUT("api/planet/:id", h.UpdatePlanet)
+	router.DELETE("api/planet/:id", h.DeletePlanet)
+	router.POST("api/add/:planet_id", h.AddPlanetToSystem)
+	router.POST("api/image/add/:planet_id", h.AddImage)
 
 }
 
 func (h *Handler) RegisterPlanetSystemHandler(router *gin.Engine) {
-	router.POST("/delete", h.DeletePlanetSystem)
+	router.GET("api/planet-system/draft/id", h.GetPlanetSystemDraftID)
+	router.GET("api/planet-system/list", h.GetPlanetSystemsList)
+	router.GET("api/planet-system/:system_id", h.GetPlanetSystemAndPlanetsByID)
+	router.PUT("api/planet-system/:system_id", h.UpdatePlanetSystem)
+	router.PUT("api/planet-system/:system_id/form", h.SetPlanetSystemFormed)
+	router.PUT("api/planet-system/:system_id/moder", h.SetPlanetSystemModerStatus)
+	router.POST("api/delete", h.DeletePlanetSystem)
 }
 
 func (h *Handler) RegisterTemperatureRequestHandler(router *gin.Engine) {
-	router.GET("/temps-request/:system_id", h.GetTempRequestData)
+	// router.GET("api/temps-request/:system_id", h.GetTempRequestData)
+	router.DELETE("api/planet-systems/:system_id/planets/:planet_id", h.DeletePlanetFromSystem)
+	router.PUT("api/planet-systems/:system_id/planets/:planet_id", h.UpdatePlanetDistance)
+}
+
+func (h *Handler) RegisterUserHandler(router *gin.Engine) {
+	router.POST("api/user/register", h.RegisterUser)
+	router.GET("api/user/me", h.GetProfile)
+	router.PUT("api/user/me", h.UpdateProfile)
+	router.POST("api/user/login", h.Login)
+	router.POST("api/user/logout", h.Logout)
 }
 
 func (h *Handler) RegisterStatic(router *gin.Engine) {
@@ -65,4 +81,12 @@ func (h *Handler) errorHandler(ctx *gin.Context, errorStatusCode int, err error)
 		"status":      "error",
 		"description": err.Error(),
 	})
+}
+
+func (h *Handler) getUserID() (uint) {
+	return 1
+}
+
+func (h *Handler) getModerID() (uint) {
+	return 2
 }
