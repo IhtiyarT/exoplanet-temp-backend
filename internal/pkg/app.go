@@ -30,8 +30,7 @@ func (a *Application) RunApp() {
    a.Handler.RegisterPlanetSystemHandler(a.Router)
    a.Handler.RegisterTemperatureRequestHandler(a.Router)
    a.Handler.RegisterUserHandler(a.Router)
-   a.Handler.RegisterStatic(a.Router)
-
+   
    serverAddress := fmt.Sprintf("%s:%d", a.Config.ServiceHost, a.Config.ServicePort)
    if err := a.Router.Run(serverAddress); err != nil {
       logrus.Fatal(err)
