@@ -118,7 +118,7 @@ func (h *Handler) GetPlanetSystemAndPlanetsByID(ctx *gin.Context) {
 type PlanetSystemInput struct {
 	StarType        string `json:"star_type"`
 	StarName        string `json:"star_name"`
-	StarTemperature uint   `json:"star_temperature"`
+	StarLuminosity uint   `json:"star_luminosity"`
 }
 
 func (h *Handler) UpdatePlanetSystem(ctx *gin.Context) {
