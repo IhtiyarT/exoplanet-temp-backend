@@ -27,8 +27,8 @@ func (h *Handler) RegisterPlanetHandler(router *gin.Engine) {
 	router.POST("api/planet/", h.CreatePlanet)
 	router.PUT("api/planet/:id", h.UpdatePlanet)
 	router.DELETE("api/planet/:id", h.DeletePlanet)
-	router.POST("api/add/:planet_id", h.AddPlanetToSystem)
-	router.POST("api/image/add/:planet_id", h.AddImage)
+	router.POST("api/planet/add/:planet_id", h.AddPlanetToSystem)
+	router.POST("api/planet/image/add/:planet_id", h.AddImage)
 }
 
 func (h *Handler) RegisterPlanetSystemHandler(router *gin.Engine) {
