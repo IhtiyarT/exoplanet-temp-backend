@@ -104,33 +104,33 @@ func (r *Repository) GetPlanetSystemAndPlanetsByID(system_id uint) (*ds.Planet_s
 	return &system, nil
 }
 
-func (r *Repository) UpdatePlanetSystem(system_id uint, input interface{}) (ds.Planet_system, error) {
+func (r *Repository) UpdatePlanetSystem(system_id uint, input interface{}) (error) {
 	var system ds.Planet_system
 
 	if err := r.db.First(&system, system_id).Error; err != nil {
-		return ds.Planet_system{}, err
+		return err
 	}
 
 	if err := r.db.Model(&system).Updates(input).Error; err != nil {
-		return ds.Planet_system{}, err
+		return err
 	}
 
-	return system, nil
+	return nil
 }
 
-func (r *Repository) SetPlanetSystemFormed(system_id uint, user_id uint) (ds.Planet_system, error) {
+func (r *Repository) SetPlanetSystemFormed(system_id uint, user_id uint) (error) {
 	var system ds.Planet_system
 
 	if err := r.db.First(&system, system_id).Error; err != nil {
-		return ds.Planet_system{}, err
+		return err
 	}
 
 	if system.Status != "Черновик" || system.DateCreated.IsZero() {
-		return ds.Planet_system{}, fmt.Errorf("статус должен быть - черновик, дата создания должна быть указа")
+		return fmt.Errorf("статус должен быть - черновик, дата создания должна быть указа")
 	}
 
 	if system.UserID != user_id {
-		return ds.Planet_system{}, fmt.Errorf("только создатель может формировать заявку")
+		return fmt.Errorf("только создатель может формировать заявку")
 	}
 
 	now := time.Now()
@@ -138,14 +138,14 @@ func (r *Repository) SetPlanetSystemFormed(system_id uint, user_id uint) (ds.Pla
 		"date_formed": now,
 		"status":      "Сформирована",
 	}).Error; err != nil {
-		return ds.Planet_system{}, err
+		return err
 	}
 
 	if err := r.db.First(&system, system_id).Error; err != nil {
-		return ds.Planet_system{}, err
+		return err
 	}
 
-	return system, nil
+	return nil
 }
 
 func (r *Repository) SetPlanetSystemModerStatus(system_id, moder_id uint, status string) error {

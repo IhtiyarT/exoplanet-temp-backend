@@ -2,9 +2,11 @@ package utils
 
 import (
 	"fmt"
-	"github.com/rs/xid"
+	"path"
 	"strings"
 	"time"
+
+	"github.com/rs/xid"
 )
 
 // Генератор имени для фото
@@ -39,4 +41,10 @@ func Contains(slice []string, value string) bool {
 		}
 	}
 	return false
+}
+
+// достает имя из URL
+func ExtractObjectName(url string) string {
+	parts := strings.Split(url, "/")
+	return path.Base(parts[len(parts)-1])
 }

@@ -13,18 +13,18 @@ import (
 
 func (h *Handler) DeletePlanetSystem(ctx *gin.Context) {
 	system_id, err := h.Repository.GetDraftPlanetSystemID()
-	if system_id == 0 && err == nil{
+	if system_id == 0 && err == nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, fmt.Errorf("система для удаления не найдена"))
 		return
 	}
 	h.Repository.DeletePlanetSystem(uint(system_id))
-    h.successHandler(ctx, "message", "успешно удалено")
+	h.successHandler(ctx, "message", "успешно удалено")
 }
 
 func (h *Handler) GetPlanetSystemByID(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 
-	id, err := strconv.Atoi(idStr) 
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		logrus.Error(err)
 	}
@@ -33,7 +33,7 @@ func (h *Handler) GetPlanetSystemByID(ctx *gin.Context) {
 	if err != nil {
 		logrus.Error(err)
 	}
-	
+
 	h.successHandler(ctx, "planet_system", planet_system)
 }
 
@@ -43,14 +43,14 @@ func (h *Handler) GetPlanetSystemDraftID(ctx *gin.Context) {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 	}
 
-	system_count, err := h.Repository.GetCountBySystemID(system_id)
-	if err != nil {
-		h.errorHandler(ctx, http.StatusInternalServerError, err)
-	}
+	// system_count, err := h.Repository.GetCountBySystemID(system_id)
+	// if err != nil {
+	// 	h.errorHandler(ctx, http.StatusInternalServerError, err)
+	// }
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"planet_system_id": system_id,
-		"system_count": system_count,
+		// "system_count": system_count,
 	})
 }
 
@@ -107,7 +107,12 @@ func (h *Handler) GetPlanetSystemAndPlanetsByID(ctx *gin.Context) {
 		return
 	}
 
-	h.successHandler(ctx, "planet_system", planet_system)
+	ctx.JSON(http.StatusOK, gin.H{
+		"planets":         planet_system.Planets,
+		"star_type":       planet_system.StarType,
+		"star_name":       planet_system.StarName,
+		"star_luminocity": planet_system.StarLuminosity,
+	})
 }
 
 type PlanetSystemInput struct {
@@ -129,13 +134,12 @@ func (h *Handler) UpdatePlanetSystem(ctx *gin.Context) {
 		return
 	}
 
-	updated_system, err := h.Repository.UpdatePlanetSystem(uint(system_id), input)
-	if err != nil {
+	if err := h.Repository.UpdatePlanetSystem(uint(system_id), input); err != nil {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	h.successAddHandler(ctx, "updated_system", updated_system)
+	h.successAddHandler(ctx, "message", "обновлено успешно")
 }
 
 func (h *Handler) SetPlanetSystemFormed(ctx *gin.Context) {
@@ -146,21 +150,19 @@ func (h *Handler) SetPlanetSystemFormed(ctx *gin.Context) {
 	}
 	id := uint(system_id)
 
-	planet_system, err := h.Repository.SetPlanetSystemFormed(id, h.getUserID())
-	if err != nil {
+	if err := h.Repository.SetPlanetSystemFormed(id, h.getUserID()); err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":        "success",
-		"planet_system": planet_system,
+		"message": "успех",
 	})
 }
 
-
 type statusInput struct {
-    Status string `json:"status"`
+	Status string `json:"status"`
 }
+
 func (h *Handler) SetPlanetSystemModerStatus(ctx *gin.Context) {
 	system_id, err := strconv.Atoi(ctx.Param("system_id"))
 	if err != nil {

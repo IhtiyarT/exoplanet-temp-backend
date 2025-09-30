@@ -50,8 +50,6 @@ func (h *Handler) GetProfile(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"user_id":  user.UserID,
-		"login":    user.Login,
-		"is_admin": user.IsAdmin,
 	})
 }
 

@@ -8,7 +8,11 @@ import (
 
 	"LABS-BMSTU-BACKEND/internal/app/ds"
 
+	"LABS-BMSTU-BACKEND/internal/app/myminio"
+	"LABS-BMSTU-BACKEND/internal/utils"
+
 	"github.com/gin-gonic/gin"
+	"github.com/minio/minio-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -34,16 +38,16 @@ func (h *Handler) GetPlanets(ctx *gin.Context) {
 		logrus.Error(err1)
 	}
 
-	cartCount, err := h.Repository.GetCountBySystemID(system_id)
+	planet_count, err := h.Repository.GetCountBySystemID(system_id)
 	if err != nil {
-		cartCount = 0
+		planet_count = 0
 		logrus.Error("Error getting cart count:", err)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"planets":   planets,
 		"query":     searchQuery,
-		"cartCount": cartCount,
+		"planet_count": planet_count,
 		"system_id": system_id,
 	})
 }
@@ -56,7 +60,7 @@ func (h *Handler) GetPlanetById(ctx *gin.Context) {
 		logrus.Error(err)
 	}
 
-	planet, err := h.Repository.GetPlanet(id)
+	planet, err := h.Repository.GetPlanet(uint(id))
 	if err != nil {
 		logrus.Error(err)
 	}
@@ -86,7 +90,7 @@ func (h *Handler) AddPlanetToSystem(ctx *gin.Context) {
 	}
 
 	h.Repository.AddPlanetToSystem(uint(planet_id), uint(system_id))
-	ctx.Redirect(http.StatusFound, "/")
+	h.successAddHandler(ctx, "message", "успешно добавлена")
 }
 
 type PlanetInput struct {
@@ -132,13 +136,13 @@ func (h *Handler) UpdatePlanet(ctx *gin.Context) {
 		return
 	}
 
-	updated_planet, err := h.Repository.UpdatePlanet(uint(planet_id), planet_input)
+	err = h.Repository.UpdatePlanet(uint(planet_id), planet_input)
 	if err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
 	}
 
-	h.successHandler(ctx, "planet", updated_planet)
+	h.successHandler(ctx, "message", "Изменено успешно")
 }
 
 func (h *Handler) DeletePlanet(ctx *gin.Context) {
@@ -148,13 +152,36 @@ func (h *Handler) DeletePlanet(ctx *gin.Context) {
 		return
 	}
 
+	planet, err := h.Repository.GetPlanet(uint(planet_id))
+	if err != nil {
+		h.errorHandler(ctx, http.StatusNotFound, fmt.Errorf("планета не найдена"))
+		return
+	}
+
+	if planet.PlanetImage != "" {
+		objectName := utils.ExtractObjectName(planet.PlanetImage)
+		
+	err := h.Minio.RemoveObject(myminio.BucketName, objectName)
+	if err != nil {
+		h.errorHandler(ctx, http.StatusInternalServerError, fmt.Errorf("ошибка удаления объекта %s из MinIO: %w", objectName, err))
+		return 
+	}
+
+	exists, err := h.Minio.StatObject(myminio.BucketName, objectName, minio.StatObjectOptions{})
+	if err == nil && exists.ETag != "" {
+		h.errorHandler(ctx, http.StatusInternalServerError, fmt.Errorf("объект %s не был удалён из MinIO", objectName))
+		return
+	}
+	}
+
 	if err := h.Repository.DeletePlanet(uint(planet_id)); err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
 	}
 
-	h.successHandler(ctx, "message", "Deleted")
+	h.successHandler(ctx, "message", "Успешно удалена")
 }
+
 
 func (h *Handler) AddImage(ctx *gin.Context) {
 	file, header, err := ctx.Request.FormFile("file")
@@ -180,7 +207,6 @@ func (h *Handler) AddImage(ctx *gin.Context) {
 		}
 	}(file)
 
-	// Upload the image to minio server.
 	newImageURL, errorCode, errImage := h.createPlanetImage(&file, header, planet_id)
 	if errImage != nil {
 		h.errorHandler(ctx, errorCode, errImage)

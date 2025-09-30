@@ -29,7 +29,6 @@ func (h *Handler) RegisterPlanetHandler(router *gin.Engine) {
 	router.DELETE("api/planet/:id", h.DeletePlanet)
 	router.POST("api/add/:planet_id", h.AddPlanetToSystem)
 	router.POST("api/image/add/:planet_id", h.AddImage)
-
 }
 
 func (h *Handler) RegisterPlanetSystemHandler(router *gin.Engine) {
@@ -39,13 +38,12 @@ func (h *Handler) RegisterPlanetSystemHandler(router *gin.Engine) {
 	router.PUT("api/planet-system/:system_id", h.UpdatePlanetSystem)
 	router.PUT("api/planet-system/:system_id/form", h.SetPlanetSystemFormed)
 	router.PUT("api/planet-system/:system_id/moder", h.SetPlanetSystemModerStatus)
-	router.POST("api/delete", h.DeletePlanetSystem)
+	router.POST("api/planet-system/delete", h.DeletePlanetSystem)
 }
 
 func (h *Handler) RegisterTemperatureRequestHandler(router *gin.Engine) {
-	// router.GET("api/temps-request/:system_id", h.GetTempRequestData)
-	router.DELETE("api/planet-systems/:system_id/planets/:planet_id", h.DeletePlanetFromSystem)
-	router.PUT("api/planet-systems/:system_id/planets/:planet_id", h.UpdatePlanetDistance)
+	router.DELETE("api/temperature-req/:system_id/planet/:planet_id", h.DeletePlanetFromSystem)
+	router.PUT("api/temperature-req/:system_id/planet/:planet_id", h.UpdatePlanetDistance)
 }
 
 func (h *Handler) RegisterUserHandler(router *gin.Engine) {
@@ -83,10 +81,10 @@ func (h *Handler) errorHandler(ctx *gin.Context, errorStatusCode int, err error)
 	})
 }
 
-func (h *Handler) getUserID() (uint) {
+func (h *Handler) getUserID() uint {
 	return 1
 }
 
-func (h *Handler) getModerID() (uint) {
+func (h *Handler) getModerID() uint {
 	return 2
 }

@@ -19,7 +19,7 @@ func (r *Repository) GetPlanets() ([]ds.Planets, error) {
 	return planets, nil
 }
 
-func (r *Repository) GetPlanet(id int) (ds.Planets, error) {
+func (r *Repository) GetPlanet(id uint) (ds.Planets, error) {
 	planet := ds.Planets{}
 	err := r.db.Where("planet_id = ?", id).First(&planet).Error
 	if err != nil {
@@ -55,24 +55,34 @@ func (r *Repository) CreatePlanet(planet ds.Planets) (int, error) {
 	return int(planet.PlanetID), nil
 }
 
-func (r *Repository) UpdatePlanet(id uint, input interface{}) (ds.Planets, error) {
+func (r *Repository) UpdatePlanet(id uint, input interface{}) (error) {
 	var planet ds.Planets
 
 	if err := r.db.First(&planet, id).Error; err != nil {
-		return ds.Planets{}, err
+		return err
 	}
 
 	if err := r.db.Model(&planet).Updates(input).Error; err != nil {
-        return ds.Planets{}, err
+        return err
     }
 
-	return planet, nil
+	return nil
 }
 
 func (r *Repository) DeletePlanet(planet_id uint) error {
-	return r.db.Model(&ds.Planets{}).
+	if err := r.db.Model(&ds.Planets{}).
 		Where("planet_id = ?", planet_id).
-		Update("is_delete", true).Error
+		Update("planet_image", "").Error; err != nil {
+		return err
+	}
+
+	if err := r.db.Model(&ds.Planets{}).
+		Where("planet_id = ?", planet_id).
+		Update("is_delete", true).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *Repository) UpdatePlanetImage(planet_id string, new_image string) error {
