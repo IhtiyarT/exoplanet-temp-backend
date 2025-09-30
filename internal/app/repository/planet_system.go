@@ -32,23 +32,27 @@ func (r *Repository) GetPlanetSystemByID(systemID uint) (ds.Planet_system, error
     return system, nil
 }
 
+type tempSystemID struct {
+    PlanetSystemID uint
+}
+
 func (r *Repository) GetDraftPlanetSystemID() (uint, error) {
-    var system_id uint
-    
+    var system tempSystemID
+
     err := r.db.
         Model(&ds.Planet_system{}).
         Select("planet_system_id").
         Where("status = ?", "Черновик").
-        First(&system_id).Error
-    
+        First(&system).Error
+
+    if errors.Is(err, gorm.ErrRecordNotFound) {
+        return 0, nil
+    }
     if err != nil {
-        if errors.Is(err, gorm.ErrRecordNotFound) {
-            return 0, nil
-        }
         return 0, err
     }
-    
-    return system_id, nil
+
+    return system.PlanetSystemID, nil
 }
 
 func (r *Repository) CreateNewDraftPlanetSystem(userID uint) (uint, error) {
@@ -57,7 +61,7 @@ func (r *Repository) CreateNewDraftPlanetSystem(userID uint) (uint, error) {
         Status:           "Черновик",
         UserID:           userID,
         StarName:         "Класс А (Белые звезды)",
-        StarTemperature:  8500,
+        StarLuminosity:  1.1,
     }
     
     result := r.db.Create(&new_system)

@@ -16,7 +16,7 @@ type PlanetWithSystemData struct {
 	PlanetTemperature uint    `json:"planet_temperature"`
 	PlanetDistance    uint    `json:"planet_distance"`
 	StarName          string  `json:"star_name"`
-	StarTemperature   uint    `json:"star_temperature"`
+	StarLuminoсity    float64 `json:"star_luminoсity"`
 	StarType          string  `json:"star_type"`
 }
 
@@ -25,7 +25,7 @@ func (r *Repository) GetPlanetsWithSystemData(system_id uint) ([]PlanetWithSyste
 
 	err := r.db.
 		Table("planets p").
-		Select("p.*, tr.planet_system_id, tr.planet_temperature, tr.planet_distance, ps.star_name, ps.star_temperature, ps.star_type").
+		Select("p.*, tr.planet_system_id, tr.planet_temperature, tr.planet_distance, ps.star_name, ps.star_luminosity, ps.star_type").
 		Joins("INNER JOIN temperature_requests tr ON p.planet_id = tr.planet_id").
 		Joins("INNER JOIN planet_systems ps ON tr.planet_system_id = ps.planet_system_id").
 		Where("p.is_delete = ? AND tr.planet_system_id = ?", false, system_id).
