@@ -38,7 +38,7 @@ func (h *Handler) RegisterPlanetSystemHandler(router *gin.Engine) {
 	router.PUT("api/planet-system/:system_id", h.UpdatePlanetSystem)
 	router.PUT("api/planet-system/:system_id/form", h.SetPlanetSystemFormed)
 	router.PUT("api/planet-system/:system_id/moder", h.SetPlanetSystemModerStatus)
-	router.POST("api/planet-system/delete", h.DeletePlanetSystem)
+	router.DELETE("api/planet-system/delete", h.DeletePlanetSystem)
 }
 
 func (h *Handler) RegisterTemperatureRequestHandler(router *gin.Engine) {
