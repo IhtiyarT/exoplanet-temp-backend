@@ -43,14 +43,23 @@ func (h *Handler) GetPlanetSystemDraftID(ctx *gin.Context) {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 	}
 
-	// system_count, err := h.Repository.GetCountBySystemID(system_id)
-	// if err != nil {
-	// 	h.errorHandler(ctx, http.StatusInternalServerError, err)
-	// }
+	planet_count, err := h.Repository.GetCountBySystemID(system_id)
+	if err != nil {
+		h.errorHandler(ctx, http.StatusInternalServerError, err)
+	}
+
+	planet_system, err := h.Repository.GetPlanetSystemAndPlanetsByID(system_id)
+	if err != nil {
+		h.errorHandler(ctx, http.StatusInternalServerError, err)
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"planet_system_id": system_id,
-		// "system_count": system_count,
+		"system_id":       system_id,
+		"planet_count":    planet_count,
+		"star_type":       planet_system.StarType,
+		"star_name":       planet_system.StarName,
+		"star_luminosity": planet_system.StarLuminosity,
+		"planets":         planet_system.Planets,
 	})
 }
 
@@ -90,7 +99,10 @@ func (h *Handler) GetPlanetSystemsList(ctx *gin.Context) {
 		return
 	}
 
-	h.successHandler(ctx, "planet_systems", planet_systems)
+	ctx.JSON(http.StatusOK, gin.H{
+		"systems_count": len(planet_systems),
+		"planet_systems": planet_systems,
+	})
 }
 
 func (h *Handler) GetPlanetSystemAndPlanetsByID(ctx *gin.Context) {
@@ -107,17 +119,24 @@ func (h *Handler) GetPlanetSystemAndPlanetsByID(ctx *gin.Context) {
 		return
 	}
 
+	planet_count, err := h.Repository.GetCountBySystemID(uint(id))
+	if err != nil {
+		h.errorHandler(ctx, http.StatusInternalServerError, err)
+		return
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"planets":         planet_system.Planets,
 		"star_type":       planet_system.StarType,
 		"star_name":       planet_system.StarName,
 		"star_luminocity": planet_system.StarLuminosity,
+		"planet_count": planet_count,
 	})
 }
 
 type PlanetSystemInput struct {
-	StarType        string `json:"star_type"`
-	StarName        string `json:"star_name"`
+	StarType       string `json:"star_type"`
+	StarName       string `json:"star_name"`
 	StarLuminosity uint   `json:"star_luminosity"`
 }
 
@@ -152,6 +171,7 @@ func (h *Handler) SetPlanetSystemFormed(ctx *gin.Context) {
 
 	if err := h.Repository.SetPlanetSystemFormed(id, h.getUserID()); err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
+		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -180,6 +200,7 @@ func (h *Handler) SetPlanetSystemModerStatus(ctx *gin.Context) {
 
 	if status != "Завершена" && status != "Отклонена" {
 		h.errorHandler(ctx, http.StatusBadRequest, fmt.Errorf("статус может быть изменен только на завершена или отклонена"))
+		return
 	}
 
 	if err = h.Repository.SetPlanetSystemModerStatus(uint(system_id), h.getModerID(), status); err != nil {
