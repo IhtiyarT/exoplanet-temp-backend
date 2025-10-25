@@ -1,21 +1,15 @@
 package repository
 
 import (
-	"fmt"
-
 	"LABS-BMSTU-BACKEND/internal/app/ds"
 )
 
 func (r *Repository) GetPlanets() ([]ds.Planets, error) {
 	var planets []ds.Planets
-	err := r.db.Find(&planets).Error
+	err := r.db.Where("is_delete = false").Find(&planets).Error
 	if err != nil {
 		return nil, err
 	}
-	if len(planets) == 0 {
-		return nil, fmt.Errorf("массив пустой")
-	}
-
 	return planets, nil
 }
 
@@ -30,21 +24,23 @@ func (r *Repository) GetPlanet(id uint) (ds.Planets, error) {
 
 func (r *Repository) GetPlanetsByTitle(title string) ([]ds.Planets, error) {
 	var planets []ds.Planets
-	err := r.db.Where("planet_title ILIKE ?", "%"+title+"%").Find(&planets).Error
+	err := r.db.
+		Where("planet_title ILIKE ? AND is_delete = false", "%"+title+"%").
+		Find(&planets).Error
 	if err != nil {
 		return nil, err
 	}
 	return planets, nil
 }
 
-func (r *Repository) GetCountBySystemID(system_id uint) (int64, error) {
-    var count int64
-    err := r.db.
-        Model(&ds.Temperature_request{}).
-        Where("planet_system_id = ?", system_id).
-        Count(&count).Error
-    
-    return count, err
+func (r *Repository) GetCountBySystemID(systemID uint) (int64, error) {
+	var count int64
+	err := r.db.
+		Table("temperature_requests").
+		Where("planet_system_id = ?", systemID).
+		Count(&count).Error
+
+	return count, err
 }
 
 func (r *Repository) CreatePlanet(planet ds.Planets) (int, error) {

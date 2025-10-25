@@ -19,10 +19,13 @@ func (r *Repository) AddPlanetToSystem(planetID, systemID uint) error {
 	return r.db.Create(temp_request).Error
 }
 
-func (r *Repository) DeletePlanetSystem(id uint) {
-	query := "UPDATE planet_systems SET status = 'Удалена' WHERE planet_system_id = $1"
-	r.db.Exec(query, id)
+func (r *Repository) DeletePlanetSystem(id uint) error {
+	result := r.db.Model(&ds.Planet_system{}).
+		Where("planet_system_id = ?", id).
+		Update("status", "Удалена")
+	return result.Error
 }
+
 
 func (r *Repository) GetPlanetSystemByID(systemID uint) (ds.Planet_system, error) {
 	var system ds.Planet_system
@@ -33,13 +36,13 @@ func (r *Repository) GetPlanetSystemByID(systemID uint) (ds.Planet_system, error
 	return system, nil
 }
 
-func (r *Repository) GetDraftPlanetSystemID() (uint, error) {
+func (r *Repository) GetDraftPlanetSystemID(userID uint) (uint, error) {
 	var system_id uint
 
 	err := r.db.
 		Model(&ds.Planet_system{}).
 		Select("planet_system_id").
-		Where("status = ?", "Черновик").
+		Where("status = ? AND user_id = ?", "Черновик", userID).
 		First(&system_id).Error
 
 	if err != nil {
@@ -51,6 +54,7 @@ func (r *Repository) GetDraftPlanetSystemID() (uint, error) {
 
 	return system_id, nil
 }
+
 
 func (r *Repository) CreateNewDraftPlanetSystem(userID uint) (uint, error) {
 	new_system := ds.Planet_system{
@@ -88,6 +92,26 @@ func (r *Repository) GetPlanetSystemsList(system_status string, startDate time.T
 	return planetSystems, result.Error
 }
 
+func (r *Repository) GetPlanetSystemsByUserID(userID uint, system_status string, startDate time.Time, endDate time.Time) ([]ds.Planet_system, error) {
+    var planetSystems []ds.Planet_system
+
+    query := r.db.Model(&ds.Planet_system{}).
+        Preload("User").
+        Preload("Moder").
+        Where("user_id = ?", userID).
+        Where("status NOT IN ?", []string{"Удалена", "Черновик"})
+
+    if system_status != "" {
+        query = query.Where("status = ?", system_status)
+    }
+
+    query = query.Where("date_formed BETWEEN ? AND ?", startDate, endDate)
+
+    result := query.Find(&planetSystems)
+    return planetSystems, result.Error
+}
+
+
 func (r *Repository) GetPlanetSystemAndPlanetsByID(system_id uint) (*ds.Planet_system, error) {
 	var system ds.Planet_system
 
@@ -104,7 +128,7 @@ func (r *Repository) GetPlanetSystemAndPlanetsByID(system_id uint) (*ds.Planet_s
 	return &system, nil
 }
 
-func (r *Repository) UpdatePlanetSystem(system_id uint, input interface{}) (error) {
+func (r *Repository) UpdatePlanetSystem(system_id uint, input interface{}) error {
 	var system ds.Planet_system
 
 	if err := r.db.First(&system, system_id).Error; err != nil {
@@ -118,19 +142,19 @@ func (r *Repository) UpdatePlanetSystem(system_id uint, input interface{}) (erro
 	return nil
 }
 
-func (r *Repository) SetPlanetSystemFormed(system_id uint, user_id uint) (error) {
+func (r *Repository) SetPlanetSystemFormed(system_id, user_id uint) error {
 	var system ds.Planet_system
 
 	if err := r.db.First(&system, system_id).Error; err != nil {
 		return err
 	}
 
-	if system.Status != "Черновик" || system.DateCreated.IsZero() {
-		return fmt.Errorf("статус должен быть - черновик, дата создания должна быть указа")
+	if system.UserID != user_id {
+		return fmt.Errorf("нельзя формировать чужую заявку")
 	}
 
-	if system.UserID != user_id {
-		return fmt.Errorf("только создатель может формировать заявку")
+	if system.Status != "Черновик" || system.DateCreated.IsZero() {
+		return fmt.Errorf("статус должен быть 'Черновик' и дата создания указана")
 	}
 
 	now := time.Now()
@@ -141,22 +165,49 @@ func (r *Repository) SetPlanetSystemFormed(system_id uint, user_id uint) (error)
 		return err
 	}
 
-	if err := r.db.First(&system, system_id).Error; err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func (r *Repository) SetPlanetSystemModerStatus(system_id, moder_id uint, status string) error {
 	var system ds.Planet_system
 
-	if err := r.db.First(&system, system_id).Error; err != nil {
+	if err := r.db.Preload("Planets").First(&system, system_id).Error; err != nil {
 		return err
 	}
 
 	if system.Status != "Сформирована" {
 		return fmt.Errorf("для завершения/отклонения статус заявки должен быть 'Сформирована'")
+	}
+
+	if status == "Завершена" {
+		if system.StarLuminosity == 0 {
+			if err := r.db.Model(&system).Updates(map[string]interface{}{
+				"moder_id":   moder_id,
+				"date_ended": time.Now().UTC(),
+				"status":     "Отклонена",
+			}).Error; err != nil {
+				return err
+			}
+			return nil
+		}
+
+		var requests []ds.Temperature_request
+		if err := r.db.Where("planet_system_id = ?", system_id).Find(&requests).Error; err != nil {
+			return err
+		}
+
+		for _, req := range requests {
+			if req.PlanetDistance == 0 {
+				if err := r.db.Model(&system).Updates(map[string]interface{}{
+					"moder_id":   moder_id,
+					"date_ended": time.Now().UTC(),
+					"status":     "Отклонена",
+				}).Error; err != nil {
+					return err
+				}
+				return nil
+			}
+		}
 	}
 
 	updates := map[string]interface{}{

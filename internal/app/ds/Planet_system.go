@@ -8,11 +8,11 @@ type Planet_system struct {
 	PlanetSystemID uint      `json:"id" gorm:"primaryKey;autoIncrement"`
 	DateCreated    time.Time `json:"date_created" gorm:"not null"`
 	Status         string    `json:"status" gorm:"type:varchar(50);not null"`
-	UserID         uint      `json:"user_id" gorm:"foreignKey:UserID;not null"`
-	User           Users     `json:"user" gorm:"foreignKey:UserID;references:UserID"`
+	UserID         uint      `json:"user_id" gorm:"not null"`
+	User           Users     `json:"user" gorm:"foreignKey:UserID"`
 
-	ModerID        uint      `json:"moder_id"`
-	Moder          Users     `json:"moder" gorm:"foreignKey:ModerID;references:UserID"`
+	ModerID        *uint     `json:"moder_id"`
+	Moder          Users     `json:"moder" gorm:"foreignKey:ModerID"`
 	DateFormed     time.Time `json:"date_formed"`
 	DateEnded      time.Time `json:"date_ended"`
 	StarType       string    `json:"star_type" gorm:"type:varchar(255)"`

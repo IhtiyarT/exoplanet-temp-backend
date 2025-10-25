@@ -26,10 +26,7 @@ func NewApp(c *config.Config, r *gin.Engine, h *handler.Handler) *Application {
 func (a *Application) RunApp() {
    logrus.Info("Server start up")
 
-   a.Handler.RegisterPlanetHandler(a.Router)
-   a.Handler.RegisterPlanetSystemHandler(a.Router)
-   a.Handler.RegisterTemperatureRequestHandler(a.Router)
-   a.Handler.RegisterUserHandler(a.Router)
+   a.Handler.RegisterHandler(a.Router)
    
    serverAddress := fmt.Sprintf("%s:%d", a.Config.ServiceHost, a.Config.ServicePort)
    if err := a.Router.Run(serverAddress); err != nil {

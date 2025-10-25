@@ -10,16 +10,18 @@ import (
 
 func main() {
 	_ = godotenv.Load()
-	db, err := gorm.Open(postgres.Open(dsn.FromEnv()), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn.FromEnv()), &gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+})
 	if err != nil {
 		panic("failed to connect database")
 	}
 
 	err = db.AutoMigrate(
-		&ds.Planets{},
-		&ds.Planet_system{},
-		&ds.Temperature_request{},
 		&ds.Users{},
+		&ds.Planet_system{},
+		&ds.Planets{},
+		&ds.Temperature_request{},
 	)
 	if err != nil {
 		panic("cant migrate db" + err.Error())

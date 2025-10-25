@@ -1,0 +1,1022 @@
+basePath: /
+definitions:
+  handler.LoginRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  handler.PlanetInput:
+    properties:
+      albedo:
+        type: number
+      description:
+        type: string
+      is_delete:
+        type: boolean
+      planet_title:
+        type: string
+    type: object
+  handler.PlanetSystemInput:
+    properties:
+      star_luminosity:
+        type: integer
+      star_name:
+        type: string
+      star_type:
+        type: string
+    type: object
+  handler.RegisterUserReq:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+      role:
+        type: integer
+    type: object
+  handler.UpdateDistanceInput:
+    properties:
+      planet_distance:
+        type: integer
+    required:
+    - planet_distance
+    type: object
+  handler.UpdateProfileRequest:
+    properties:
+      new_login:
+        type: string
+      new_password:
+        type: string
+    type: object
+  handler.statusInput:
+    properties:
+      status:
+        type: string
+    type: object
+host: localhost:8082
+info:
+  contact:
+    email: bitop@spatecon.ru
+    name: API Support
+    url: https://vk.com/bmstu_schedule
+  description: BMSTU dia lab
+  license:
+    name: AS IS (NO WARRANTY)
+  title: BMSTU LAB
+  version: "1.0"
+paths:
+  /api/planet:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех планет с возможностью поиска по названию
+      parameters:
+      - description: Поисковый запрос (по названию планеты)
+        in: query
+        name: query
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Получить список планет
+      tags:
+      - planets
+  /api/planet-system/{system_id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о планетной системе по её идентификатору
+      parameters:
+      - description: ID планетной системы
+        in: path
+        name: system_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Получить планетную систему по ID
+      tags:
+      - planet-system
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о планетной системе (только для черновиков)
+      parameters:
+      - description: ID планетной системы
+        in: path
+        name: system_id
+        required: true
+        type: integer
+      - description: Данные для обновления
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.PlanetSystemInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Обновить планетную систему
+      tags:
+      - planet-system
+  /api/planet-system/{system_id}/form:
+    put:
+      consumes:
+      - application/json
+      description: Переводит черновик планетной системы в статус "Сформирована"
+      parameters:
+      - description: ID планетной системы
+        in: path
+        name: system_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Сформировать заявку
+      tags:
+      - planet-system
+  /api/planet-system/{system_id}/moder:
+    put:
+      consumes:
+      - application/json
+      description: Устанавливает статус заявки (Завершена/Отклонена) - только для
+        модераторов и админов
+      parameters:
+      - description: ID планетной системы
+        in: path
+        name: system_id
+        required: true
+        type: integer
+      - description: Новый статус
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.statusInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Установить статус модератора
+      tags:
+      - planet-system
+  /api/planet-system/{system_id}/planets:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает полную информацию о планетной системе включая список
+        планет
+      parameters:
+      - description: ID планетной системы
+        in: path
+        name: system_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Получить планетную систему с планетами по ID
+      tags:
+      - planet-system
+  /api/planet-system/delete:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет черновик планетной системы текущего пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Удалить планетную систему
+      tags:
+      - planet-system
+  /api/planet-system/draft/id:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о черновике планетной системы текущего пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Получить ID черновика планетной системы
+      tags:
+      - planet-system
+  /api/planet-system/list:
+    get:
+      consumes:
+      - application/json
+      description: Получить список всех планетных систем (требуется авторизация)
+      parameters:
+      - description: Статус системы
+        in: query
+        name: system_status
+        type: string
+      - description: Начальная дата (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: Конечная дата (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Получить список планетных систем
+      tags:
+      - planet-system
+  /api/planet/:
+    post:
+      consumes:
+      - application/json
+      description: Создает новую планету (только для модераторов и админов)
+      parameters:
+      - description: Данные для создания планеты
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.PlanetInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Создать новую планету
+      tags:
+      - planets
+  /api/planet/{planet_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет планету (только для модераторов и админов)
+      parameters:
+      - description: ID планеты
+        in: path
+        name: planet_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Удалить планету
+      tags:
+      - planets
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о планете по её идентификатору
+      parameters:
+      - description: ID планеты
+        in: path
+        name: planet_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Получить планету по ID
+      tags:
+      - planets
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о планете (только для модераторов и админов)
+      parameters:
+      - description: ID планеты
+        in: path
+        name: planet_id
+        required: true
+        type: integer
+      - description: Данные для обновления
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.PlanetInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Обновить информацию о планете
+      tags:
+      - planets
+  /api/planet/add/{planet_id}:
+    post:
+      consumes:
+      - application/json
+      description: Добавляет планету в черновик планетной системы текущего пользователя
+      parameters:
+      - description: ID планеты
+        in: path
+        name: planet_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Добавить планету в систему
+      tags:
+      - planets
+  /api/planet/image/add/{planet_id}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загружает изображение для планеты
+      parameters:
+      - description: ID планеты
+        in: path
+        name: planet_id
+        required: true
+        type: integer
+      - description: Изображение планеты
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Добавить изображение планеты
+      tags:
+      - planets
+  /api/temperature-req/{system_id}/planet/{planet_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет планету из планетной системы (только для черновиков и создателя
+        системы)
+      parameters:
+      - description: ID планетной системы
+        in: path
+        name: system_id
+        required: true
+        type: integer
+      - description: ID планеты
+        in: path
+        name: planet_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Удалить планету из системы
+      tags:
+      - temperature-request
+    put:
+      consumes:
+      - application/json
+      description: Обновляет расстояние до планеты в планетной системе (только для
+        черновиков и создателя системы)
+      parameters:
+      - description: ID планетной системы
+        in: path
+        name: system_id
+        required: true
+        type: integer
+      - description: ID планеты
+        in: path
+        name: planet_id
+        required: true
+        type: integer
+      - description: Новое расстояние до планеты
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateDistanceInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Обновить расстояние до планеты
+      tags:
+      - temperature-request
+  /api/user/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о пользователе по ID
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Получить профиль пользователя
+      tags:
+      - user
+  /api/user/login:
+    post:
+      consumes:
+      - application/json
+      description: Выполняет вход пользователя и возвращает JWT токен
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Аутентификация пользователя
+      tags:
+      - user
+  /api/user/logout:
+    post:
+      consumes:
+      - application/json
+      description: Выполняет выход пользователя и добавляет токен в черный список
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Выход из системы
+      tags:
+      - user
+  /api/user/me:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет данные текущего пользователя
+      parameters:
+      - description: Данные для обновления
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Обновить профиль пользователя
+      tags:
+      - user
+  /api/user/register:
+    post:
+      consumes:
+      - application/json
+      description: Создает нового пользователя в системе
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterUserReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Регистрация пользователя
+      tags:
+      - user
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    description: 'Введите: "Bearer {token}" (без кавычек)'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
