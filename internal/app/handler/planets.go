@@ -117,7 +117,12 @@ func (h *Handler) GetPlanetById(ctx *gin.Context) {
 		return
 	}
 
-	h.successHandler(ctx, "planet", planet)
+	ctx.JSON(http.StatusOK, gin.H{
+		"planet_title":       planet.PlanetTitle,
+		"planet_description": planet.PlanetDescription,
+		"planet_image":       planet.PlanetImage,
+		"albedo":             planet.Albedo,
+	})
 }
 
 // AddPlanetToSystem godoc
@@ -199,8 +204,6 @@ func (h *Handler) AddPlanetToSystem(ctx *gin.Context) {
 
 	h.successAddHandler(ctx, "message", "Планета успешно добавлена в систему")
 }
-
-
 
 type PlanetInput struct {
 	PlanetTitle string  `json:"planet_title"`
@@ -409,7 +412,6 @@ func (h *Handler) AddImage(ctx *gin.Context) {
 	h.successAddHandler(ctx, "planet_image", newImageURL)
 }
 
-
 // Функция записи фото в минио
 func (h *Handler) createPlanetImage(file *multipart.File, header *multipart.FileHeader, planet_id string) (string, int, error) {
 	newImageURL, errMinio := h.createImageInMinio(file, header)
@@ -421,4 +423,3 @@ func (h *Handler) createPlanetImage(file *multipart.File, header *multipart.File
 	}
 	return newImageURL, 0, nil
 }
-
