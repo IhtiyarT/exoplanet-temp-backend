@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"LABS-BMSTU-BACKEND/internal/app/dto"
 )
 
 // DeletePlanetSystem godoc
@@ -171,7 +172,6 @@ func (h *Handler) GetPlanetSystemDraftID(ctx *gin.Context) {
 	})
 }
 
-
 // GetPlanetSystemsList godoc
 // @Summary Получить список планетных систем
 // @Description Получить список всех планетных систем (требуется авторизация)
@@ -246,23 +246,22 @@ func (h *Handler) GetPlanetSystemsList(ctx *gin.Context) {
 		return
 	}
 
-	var planet_systems []ds.Planet_system
-	var err error
+	var systems []dto.SystemListItem
+	var errRepo error
 
 	if currentUserRole == role.Moderator || currentUserRole == role.Admin {
-		planet_systems, err = h.Repository.GetPlanetSystemsList(system_status, start_date, end_date)
+		systems, errRepo = h.Repository.GetPlanetSystemsForList(system_status, start_date, end_date)
 	} else {
-		planet_systems, err = h.Repository.GetPlanetSystemsByUserID(currentUserID, system_status, start_date, end_date)
+		systems, errRepo = h.Repository.GetPlanetSystemsForListByUser(currentUserID, system_status, start_date, end_date)
 	}
 
-	if err != nil {
-		h.errorHandler(ctx, http.StatusInternalServerError, err)
+	if errRepo != nil {
+		h.errorHandler(ctx, http.StatusInternalServerError, errRepo)
 		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"systems_count":  len(planet_systems),
-		"planet_systems": planet_systems,
+		"planet_systems": systems,
 	})
 }
 
@@ -328,7 +327,6 @@ func (h *Handler) GetPlanetSystemAndPlanetsByID(ctx *gin.Context) {
 		"planet_count":    planet_count,
 	})
 }
-
 
 type PlanetSystemInput struct {
 	StarType       string `json:"star_type"`
@@ -547,4 +545,49 @@ func (h *Handler) SetPlanetSystemModerStatus(ctx *gin.Context) {
 	}
 
 	h.successHandler(ctx, "message", "Успех")
+}
+
+// UpdateSystemResults godoc
+// @Summary Обновить результаты расчётов
+// @Description Обновляет температуры в Temperature_requests (с псевдо-ключом)
+// @Tags planet-system
+// @Accept json
+// @Produce json
+// @Param system_id path int true "ID системы"
+// @Param key query string true "Auth key (8 байт)"
+// @Param body body []map[string]interface{} true "Results: [{"planet_id": uint, "temperature": uint}]"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /api/planet-system/{system_id}/results [put]
+func (h *Handler) UpdateSystemResults(ctx *gin.Context) {
+	systemID, err := strconv.Atoi(ctx.Param("system_id"))
+	if err != nil {
+		h.errorHandler(ctx, http.StatusBadRequest, err)
+		return
+	}
+	key := ctx.Query("key")
+	if key != "abc123xy" {
+		h.errorHandler(ctx, http.StatusUnauthorized, fmt.Errorf("invalid key"))
+		return
+	}
+
+	var results []struct {
+		PlanetID    uint `json:"planet_id"`
+		Temperature uint `json:"temperature"`
+	}
+	if err := ctx.ShouldBindJSON(&results); err != nil {
+		h.errorHandler(ctx, http.StatusBadRequest, err)
+		return
+	}
+
+	for _, res := range results {
+		if err := h.Repository.UpdateTemperatureRequest(uint(systemID), res.PlanetID, res.Temperature); err != nil {
+			h.errorHandler(ctx, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
 }

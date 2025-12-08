@@ -38,19 +38,20 @@ func (h *Handler) RegisterPlanetHandler(router *gin.Engine) {
 	router.POST("api/planet", h.WithAuthCheck(role.Moderator, role.Admin), h.CreatePlanet)
 	router.PUT("api/planet/:planet_id", h.WithAuthCheck(role.Moderator, role.Admin), h.UpdatePlanet)
 	router.DELETE("api/planet/:planet_id", h.WithAuthCheck(role.Moderator, role.Admin), h.DeletePlanet)
-	router.POST("api/planet/add/:planet_id", h.WithAuthCheck(role.User), h.AddPlanetToSystem)
+	router.POST("api/planet/add/:planet_id", h.WithAuthCheck(role.User, role.Moderator, role.Admin), h.AddPlanetToSystem)
 	router.POST("api/planet/image/add/:planet_id", h.WithAuthCheck(role.Moderator, role.Admin), h.AddImage)
 }
 
 func (h *Handler) RegisterPlanetSystemHandler(router *gin.Engine) {
     router.GET("api/planet-system/draft/id", h.WithAuthCheck(role.User), h.GetPlanetSystemDraftID)
-    
+
     router.GET("api/planet-system/list", h.WithAuthCheck(role.User, role.Moderator, role.Admin), h.GetPlanetSystemsList)
     router.GET("api/planet-system/:system_id", h.WithAuthCheck(role.User, role.Moderator, role.Admin), h.GetPlanetSystemAndPlanetsByID)
     router.PUT("api/planet-system/:system_id", h.WithAuthCheck(role.User), h.UpdatePlanetSystem)
     
     router.PUT("api/planet-system/:system_id/form", h.WithAuthCheck(role.User), h.SetPlanetSystemFormed)
     router.PUT("api/planet-system/:system_id/moder", h.WithAuthCheck(role.Moderator, role.Admin), h.SetPlanetSystemModerStatus)
+	router.PUT("/api/planet-system/:system_id/results", h.UpdateSystemResults)
     
     router.DELETE("api/planet-system/delete", h.WithAuthCheck(role.User), h.DeletePlanetSystem)
 }
@@ -64,7 +65,7 @@ func (h *Handler) RegisterTemperatureRequestHandler(router *gin.Engine) {
 func (h *Handler) RegisterUserHandler(router *gin.Engine) {
 	router.POST("api/user/register", h.RegisterUser)
 	router.GET("api/user/:user_id", h.WithAuthCheck(role.User, role.Moderator, role.Admin), h.GetProfile)
-	router.PUT("api/user/me", h.WithAuthCheck(role.User), h.UpdateProfile)
+	router.PUT("api/user/me", h.WithAuthCheck(role.User, role.Moderator, role.Admin), h.UpdateProfile)
 	router.POST("api/user/login", h.Login)
 	router.POST("api/user/logout", h.WithAuthCheck(role.User, role.Moderator, role.Admin), h.Logout)
 }

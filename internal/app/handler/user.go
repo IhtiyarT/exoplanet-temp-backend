@@ -56,9 +56,9 @@ func (h *Handler) RegisterUser(ctx *gin.Context) {
 	}
 
 	user := ds.Users{
-		Login: req.Login,
+		Login:    req.Login,
 		Password: req.Password,
-		Role: role.Role(req.Role),
+		Role:     role.Role(req.Role),
 	}
 
 	if err := h.Repository.CreateUser(user); err != nil {
@@ -132,12 +132,6 @@ type UpdateProfileRequest struct {
 // @Router /api/user/me [put]
 func (h *Handler) UpdateProfile(ctx *gin.Context) {
 	userID := ctx.GetUint("user_id")
-	userRole := ctx.MustGet("user_role").(role.Role)
-
-	if userRole != role.User {
-		h.errorHandler(ctx, http.StatusForbidden, fmt.Errorf("только пользователь может изменять свой профиль"))
-		return
-	}
 
 	var input UpdateProfileRequest
 	if err := ctx.ShouldBindJSON(&input); err != nil {
@@ -199,7 +193,10 @@ func (h *Handler) Login(ctx *gin.Context) {
 		return
 	}
 
-	h.successHandler(ctx, "token", token)
+	ctx.JSON(http.StatusOK, gin.H{
+		"token": token,
+		"user":  user,
+	})
 }
 
 // Logout godoc

@@ -175,7 +175,7 @@ func (h *Handler) AddPlanetToSystem(ctx *gin.Context) {
 
 	system_id, err := h.Repository.GetDraftPlanetSystemID(userID)
 	if err != nil {
-		h.errorHandler(ctx, http.StatusInternalServerError, err)
+		h.errorHandler(ctx, http.StatusInternalServerError, fmt.Errorf("тут чет не то с черновиком системы"))
 		return
 	}
 
