@@ -81,7 +81,7 @@ func (r *Repository) GetPlanetSystemsList(system_status string, startDate time.T
 	query := r.db.Model(&ds.Planet_system{}).
 		Preload("User").
 		Preload("Moder").
-		Where("status NOT IN ?", []string{"Удалена", "Черновик"})
+		Where("status NOT IN ?", []string{"Черновик"})
 
 	if system_status != "" {
 		query = query.Where("status = ?", system_status)
@@ -112,20 +112,27 @@ func (r *Repository) GetPlanetSystemsByUserID(userID uint, system_status string,
 	return planetSystems, result.Error
 }
 
-func (r *Repository) GetPlanetSystemAndPlanetsByID(system_id uint) (*ds.Planet_system, error) {
+func (r *Repository) GetPlanetSystemAndPlanetsByID(systemID uint) (*ds.Planet_system, []ds.Temperature_request, error) {
 	var system ds.Planet_system
 
-	result := r.db.
+	err := r.db.
 		Preload("User").
 		Preload("Moder").
 		Preload("Planets", "is_delete = false").
-		First(&system, system_id)
-
-	if result.Error != nil {
-		return nil, result.Error
+		First(&system, systemID).Error
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return &system, nil
+	var requests []ds.Temperature_request
+	err = r.db.
+		Where("planet_system_id = ?", systemID).
+		Find(&requests).Error
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &system, requests, nil
 }
 
 func (r *Repository) UpdatePlanetSystem(system_id uint, input interface{}) error {
@@ -304,7 +311,7 @@ func (r *Repository) getPlanetSystemsForListQuery(statusFilter string, startDate
 		`).
 		Joins("LEFT JOIN users ON users.user_id = planet_systems.user_id").
 		Joins("LEFT JOIN temperature_requests ON temperature_requests.planet_system_id = planet_systems.planet_system_id").
-		Where("planet_systems.status NOT IN ?", []string{"Черновик", "Удалена"}).
+		Where("planet_systems.status NOT IN ?", []string{"Черновик"}).
 		Where("planet_systems.date_formed BETWEEN ? AND ?", startDate, endDate)
 
 	if statusFilter != "" {

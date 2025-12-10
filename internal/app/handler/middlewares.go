@@ -87,6 +87,41 @@ func (h *Handler) WithAuthCheck(allowedRoles ...role.Role) gin.HandlerFunc {
 	}
 }
 
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		allowedOrigins := []string{
+            "http://localhost:3000",
+            "tauri://localhost",
+            "http://tauri.localhost",
+            "http://localhost:8082",
+			"http://localhost:9000",
+			"http://*:9000",
+        }
+        
+        origin := c.Request.Header.Get("Origin")
+        for _, allowed := range allowedOrigins {
+            if origin == allowed {
+                c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+                break
+            }
+        }
+		
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Accept, Origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
+		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length, Authorization")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
+	}
+}
+
+
 func (h *Handler) WithOptionalAuthCheck() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		jwtStr := ctx.GetHeader("Authorization")

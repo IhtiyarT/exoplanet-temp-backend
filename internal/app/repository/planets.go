@@ -36,7 +36,7 @@ func (r *Repository) GetPlanetsByTitle(title string) ([]ds.Planets, error) {
 func (r *Repository) GetCountBySystemID(systemID uint) (int64, error) {
 	var count int64
 	err := r.db.
-		Table("temperature_requests").
+		Model(&ds.Temperature_request{}).
 		Where("planet_system_id = ?", systemID).
 		Count(&count).Error
 

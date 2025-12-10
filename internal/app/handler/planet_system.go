@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"LABS-BMSTU-BACKEND/internal/app/dto"
+
+	"github.com/gin-gonic/gin"
 )
 
 // DeletePlanetSystem godoc
@@ -156,7 +158,7 @@ func (h *Handler) GetPlanetSystemDraftID(ctx *gin.Context) {
 		return
 	}
 
-	planet_system, err := h.Repository.GetPlanetSystemAndPlanetsByID(system_id)
+	planet_system, _, err := h.Repository.GetPlanetSystemAndPlanetsByID(system_id)
 	if err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
@@ -266,65 +268,106 @@ func (h *Handler) GetPlanetSystemsList(ctx *gin.Context) {
 }
 
 // GetPlanetSystemAndPlanetsByID godoc
-// @Summary Получить планетную систему с планетами по ID
-// @Description Возвращает полную информацию о планетной системе включая список планет
+// @Summary Получить заявку с планетами и рассчитанными/сохранёнными температурами
+// @Description Возвращает звезду и список планет с названием, изображением, альбедо, расстоянием и температурой
 // @Tags planet-system
-// @Accept json
 // @Produce json
 // @Param system_id path int true "ID планетной системы"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
-// @Failure 403 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
+// @Failure 400,401,403,404,500 {object} map[string]interface{}
 // @Security BearerAuth
 // @Router /api/planet-system/{system_id}/planets [get]
-func (h *Handler) GetPlanetSystemAndPlanetsByID(ctx *gin.Context) {
-	system_id := ctx.Param("system_id")
-	id, err := strconv.Atoi(system_id)
+func (h *Handler) GetPlanetSystemAndPlanetsByID(c *gin.Context) {
+	systemIDStr := c.Param("system_id")
+	systemID, err := strconv.ParseUint(systemIDStr, 10, 32)
 	if err != nil {
-		h.errorHandler(ctx, http.StatusBadRequest, err)
+		h.errorHandler(c, http.StatusBadRequest, err)
 		return
 	}
 
-	currentUserIDVal, okID := ctx.Get("user_id")
-	currentUserRoleVal, okRole := ctx.Get("user_role")
-	if !okID || !okRole {
-		h.errorHandler(ctx, http.StatusUnauthorized, fmt.Errorf("требуется авторизация"))
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		h.errorHandler(c, http.StatusUnauthorized, fmt.Errorf("не авторизован"))
 		return
 	}
-	currentUserID := currentUserIDVal.(uint)
-	currentUserRole := currentUserRoleVal.(role.Role)
+	userID := userIDVal.(uint)
 
-	planet_system, err := h.Repository.GetPlanetSystemAndPlanetsByID(uint(id))
+	userRoleVal, exists := c.Get("user_role")
+	if !exists {
+		h.errorHandler(c, http.StatusUnauthorized, fmt.Errorf("роль не определена"))
+		return
+	}
+	userRole := userRoleVal.(role.Role)
+
+	system, tempRequests, err := h.Repository.GetPlanetSystemAndPlanetsByID(uint(systemID))
 	if err != nil {
-		h.errorHandler(ctx, http.StatusNotFound, err)
+		h.errorHandler(c, http.StatusNotFound, fmt.Errorf("система не найдена"))
 		return
 	}
 
-	if planet_system.Status == "Удалена" {
-		h.errorHandler(ctx, http.StatusNotFound, fmt.Errorf("система не найдена"))
+	if system.Status == "Удалена" {
+		h.errorHandler(c, http.StatusNotFound, fmt.Errorf("система не найдена"))
 		return
 	}
 
-	if currentUserRole == role.User && planet_system.UserID != currentUserID {
-		h.errorHandler(ctx, http.StatusForbidden, fmt.Errorf("доступ запрещен"))
+	if userRole == 0 && system.UserID != userID {
+		h.errorHandler(c, http.StatusForbidden, fmt.Errorf("доступ запрещён"))
 		return
 	}
 
-	planet_count, err := h.Repository.GetCountBySystemID(uint(id))
-	if err != nil {
-		h.errorHandler(ctx, http.StatusInternalServerError, err)
-		return
+	tempMap := make(map[uint]ds.Temperature_request)
+	for _, tr := range tempRequests {
+		tempMap[tr.PlanetID] = tr
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"planets":         planet_system.Planets,
-		"star_type":       planet_system.StarType,
-		"star_name":       planet_system.StarName,
-		"star_luminocity": planet_system.StarLuminosity,
-		"planet_count":    planet_count,
+	type PlanetView struct {
+		PlanetTitle   string  `json:"planet_title"`
+		PlanetImage   string `json:"planet_image"`
+		Albedo        *string `json:"albedo"`
+		Distance      uint    `json:"distance"`      
+		Temperature   uint    `json:"temperature"`   
+	}
+
+	var planetsView []PlanetView
+
+	for _, planet := range system.Planets {
+		if planet.IsDelete {
+			continue
+		}
+
+		tr, exists := tempMap[planet.PlanetID]
+
+		distance := uint(0)
+		temperature := uint(0)
+		if exists {
+			distance = tr.PlanetDistance
+			temperature = tr.PlanetTemperature
+		}
+
+		var albedoStr *string = nil
+		if planet.Albedo != 0 {
+			s := fmt.Sprintf("%.2f", planet.Albedo)
+			s = strings.TrimSpace(s)
+			if s != "" && s != "0" && s != "<nil>" && s != "0.00" {
+				albedoStr = &s
+			}
+		}
+
+		planetsView = append(planetsView, PlanetView{
+			PlanetTitle: planet.PlanetTitle,
+			PlanetImage: planet.PlanetImage,
+			Albedo:      albedoStr,
+			Distance:    distance,
+			Temperature: temperature,
+		})
+	}
+
+	c.JSON(200, gin.H{
+		"star_name":       system.StarName,
+		"star_type":       system.StarType,
+		"star_luminocity": system.StarLuminosity,
+		"planet_count":    len(planetsView),
+		"planets":         planetsView,
 	})
 }
 
